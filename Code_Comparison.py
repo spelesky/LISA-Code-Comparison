@@ -314,12 +314,12 @@ def compute_boundaries(porb, M1, IDs, p_range, CE_1_porb, CE_1_M1, CE_1_ID, CE_1
     max_ID_list = []
     selected_min_ids = set()
     selected_max_ids = set()
-    CE_1_porb_outlier = []
-    CE_1_mass1_outlier = []
-    CE_1_ID_outlier = []
+    porb_outlier = []
+    mass1_outlier = []
+    ID_outlier = []
     min_type1_list = []
     max_type1_list = []
-    CE_1_type1_outlier = []
+    type1_outlier = []
 
     for p in p_range:
         p_min = p - 0.05
@@ -349,10 +349,10 @@ def compute_boundaries(porb, M1, IDs, p_range, CE_1_porb, CE_1_M1, CE_1_ID, CE_1
             ce_right = np.searchsorted(CE_1_porb_sorted, p_max, side='right')
             ce_m1 = CE_1_M1_sorted[ce_left:ce_right]
             mask = (ce_m1 >= (min_mass - 0.25)) & (ce_m1 <= (min_mass + 0.25))
-            CE_1_porb_outlier.extend(CE_1_porb_sorted[ce_left:ce_right][mask].tolist())
-            CE_1_mass1_outlier.extend(ce_m1[mask].tolist())
-            CE_1_ID_outlier.extend(CE_1_ID_sorted[ce_left:ce_right][mask].tolist())
-            CE_1_type1_outlier.extend(CE_1_type1_sorted[ce_left:ce_right][mask].tolist())
+            porb_outlier.extend(CE_1_porb_sorted[ce_left:ce_right][mask].tolist())
+            mass1_outlier.extend(ce_m1[mask].tolist())
+            ID_outlier.extend(CE_1_ID_sorted[ce_left:ce_right][mask].tolist())
+            type1_outlier.extend(CE_1_type1_sorted[ce_left:ce_right][mask].tolist())
 
         max_idx = np.argmax(current_M1)
         max_mass = current_M1[max_idx]
@@ -370,14 +370,14 @@ def compute_boundaries(porb, M1, IDs, p_range, CE_1_porb, CE_1_M1, CE_1_ID, CE_1
             ce_right = np.searchsorted(CE_1_porb_sorted, p_max, side='right')
             ce_m1 = CE_1_M1_sorted[ce_left:ce_right]                
             mask = (ce_m1 >= (max_mass - 0.25)) & (ce_m1 <= (max_mass + 0.25))
-            CE_1_porb_outlier.extend(CE_1_porb_sorted[ce_left:ce_right][mask].tolist())
-            CE_1_mass1_outlier.extend(ce_m1[mask].tolist())
-            CE_1_ID_outlier.extend(CE_1_ID_sorted[ce_left:ce_right][mask].tolist())
-            CE_1_type1_outlier.extend(CE_1_type1_sorted[ce_left:ce_right][mask].tolist())
+            porb_outlier.extend(CE_1_porb_sorted[ce_left:ce_right][mask].tolist())
+            mass1_outlier.extend(ce_m1[mask].tolist())
+            ID_outlier.extend(CE_1_ID_sorted[ce_left:ce_right][mask].tolist())
+            type1_outlier.extend(CE_1_type1_sorted[ce_left:ce_right][mask].tolist())
 
     return (min_mass_list, max_mass_list, min_porb_list, max_porb_list,
-            min_ID_list, max_ID_list, CE_1_porb_outlier, CE_1_mass1_outlier,
-            CE_1_ID_outlier, CE_1_type1_outlier, min_type1_list, max_type1_list)
+            min_ID_list, max_ID_list, porb_outlier, mass1_outlier,
+            ID_outlier, type1_outlier, min_type1_list, max_type1_list)
 
 
 
@@ -971,32 +971,47 @@ def sortedNeighborDict(dataArrays):
 
     return sorted_neighbors
 
-    #print("\nSorted Neighbors Dictionary:")
-    #for cat, systems in sorted_neighbors.items():
-    #    print(f"\nCategory: {cat}")
-    #    for sys_id, sorted_dict in systems.items():
-    #        print(f"Source ID: {sys_id}, Category: {cat}")
-    #        print("Source Data:")
-    #        source_df = d.loc[d.ID == sys_id, ['time', 'type1', 'type2', 'event', 'semiMajor', 'mass1', 'mass2']]
-    #        print(source_df)
-    #        print("  Sorted by porb_diff:")
-    #        for nbr in sorted_dict['porb_diff']:
-    #            neighbor_id = nbr['neighbor_id']
-    #            print(f"    Neighbor ID: {neighbor_id}, Category: {nbr['neighbor_category']}")
-    #            print("      Data:")
-    #            neighbor_df = d.loc[d.ID == neighbor_id, ['time', 'type1', 'type2', 'event', 'semiMajor', 'mass1', 'mass2']]
-    #            print(neighbor_df)
-    #            print(f"      porb_diff: {nbr['porb_diff']:.2f} days, mass_diff: {nbr['mass_diff']:.2f} M☉")
+def printSortedNeighborDict(d, sorted_neighbors):
+    """
+    Print the sorted neighbor dictionary
 
-    #        print("  Sorted by mass_diff:")
-    #        for nbr in sorted_dict['mass_diff']:
-    #            neighbor_id = nbr['neighbor_id']
-    #            print(f"    Neighbor ID: {neighbor_id}, Category: {nbr['neighbor_category']}")
-    #            print("      Data:")
-    #            neighbor_df = d.loc[d.ID == neighbor_id, ['time', 'type1', 'type2', 'event', 'semiMajor', 'mass1', 'mass2']]
-    #            print(neighbor_df)
-    #            print(f"      mass_diff: {nbr['mass_diff']:.2f} M☉, porb_diff: {nbr['porb_diff']:.2f} days")
-    #    print(f'\n')
-    #    print(f'\n')
+    Parameters
+    ----------
+    d : `pandas.DataFrame`
+        All data in T0 format.
+
+    sorted_neighbors : `dict`
+        dictionary of system ID with neighboring systems (on the porb vs. M1 plot) ID, orbital period difference, and mass1 difference
+
+    Returns
+    -------
+    """   
+    print("\nSorted Neighbors Dictionary:")
+    for cat, systems in sorted_neighbors.items():
+        print(f"\nCategory: {cat}")
+        for sys_id, sorted_dict in systems.items():
+            print(f"Source ID: {sys_id}, Category: {cat}")
+            print("Source Data:")
+            source_df = d.loc[d.ID == sys_id, ['time', 'type1', 'type2', 'event', 'semiMajor', 'mass1', 'mass2']]
+            print(source_df)
+            print("  Sorted by porb_diff:")
+            for nbr in sorted_dict['porb_diff']:
+                neighbor_id = nbr['neighbor_id']
+                print(f"    Neighbor ID: {neighbor_id}, Category: {nbr['neighbor_category']}")
+                print("      Data:")
+                neighbor_df = d.loc[d.ID == neighbor_id, ['time', 'type1', 'type2', 'event', 'semiMajor', 'mass1', 'mass2']]
+                print(neighbor_df)
+                print(f"      porb_diff: {nbr['porb_diff']:.2f} days, mass_diff: {nbr['mass_diff']:.2f} M☉")
+
+            print("  Sorted by mass_diff:")
+            for nbr in sorted_dict['mass_diff']:
+                neighbor_id = nbr['neighbor_id']
+                print(f"    Neighbor ID: {neighbor_id}, Category: {nbr['neighbor_category']}")
+                print("      Data:")
+                neighbor_df = d.loc[d.ID == neighbor_id, ['time', 'type1', 'type2', 'event', 'semiMajor', 'mass1', 'mass2']]
+                print(neighbor_df)
+                print(f"      mass_diff: {nbr['mass_diff']:.2f} M☉, porb_diff: {nbr['porb_diff']:.2f} days")
+        print(f'\n')
+        print(f'\n')
 
     
